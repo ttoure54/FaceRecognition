@@ -32,12 +32,13 @@ img_test=cv2.imread("Test_image/Alicia_test_img1.jpg")
 ### -----Haar Cascade Face detection ---------####
 
 gray= cv2.cvtColor(img_test, cv2.COLOR_BGR2GRAY)
-faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+faces = face_cascade.detectMultiScale(gray, 1.3, 5) #Face detection 
 
 for (x,y,w,h) in faces:
     cv2.rectangle(img_test,(x,y),(x+w,y+h),(255,0,0),2)
+    cropped_face= img_test[y:y+h,x:x+w]
 
-cv2.imshow('img_test',img_test)
+cv2.imshow('img_test',cropped_face)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
