@@ -1,2 +1,2 @@
-# Acces_manager
-Acces Manager Project, with face detection
+# FaceRecognition
+Library project for face detection and recognition using Machine Learning with CNN model
