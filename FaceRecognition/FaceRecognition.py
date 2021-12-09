@@ -11,7 +11,17 @@ import numpy as np
 import cv2
 import os
 
-#https://github.com/raviranjan0309/Face-Recognition-using-Keras---Tensorflow/blob/master/modelBuilding.py
+
+"""
+2021 - ISTY - SEE5 - BORG Arthur & TOURE Talla 
+FaceRecognition library 
+Using examples available in the script main.py 
+
+Description : This library containts the Class "FaceRecognition" whiich includes methods to perform face detection and face recongnition using 
+Convolutionnal Neural Network. 
+
+"""
+
 
 
 class FaceRecognition : 
@@ -33,6 +43,10 @@ class FaceRecognition :
         self.model = tf.keras.Sequential()
         self.train_data = self.model
         self.validation_data = self.model
+
+
+        self.face_haarcascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        self.eye_haarcascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
 
 
         #for user in os.listdir(self.user_path):
@@ -98,8 +112,8 @@ class FaceRecognition :
 
 
         ### -----Haar Cascade Face detection ---------####
-        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-        eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
+        face_haarcascade = self.face_haarcascade
+        eye_haarcascade = self.eye_haarcascade
 
         cv2.resizeWindow('window',600,800)
         cropped_face=np.float32([0])
@@ -113,7 +127,7 @@ class FaceRecognition :
             exit
 
         gray= cv2.cvtColor(raw_image_path, cv2.COLOR_BGR2GRAY)
-        faces = face_cascade.detectMultiScale(gray, 1.3, 5) #Face detection 
+        faces = face_haarcascade.detectMultiScale(gray, 1.3, 5) #Face detection 
 
         for (x,y,w,h) in faces:
             cv2.rectangle(raw_image_path,(x,y),(x+w,y+h),(255,0,0),2)
@@ -134,15 +148,13 @@ class FaceRecognition :
         
 
     def CNNmodel_train(self):
-        ################### Model generate ####################
+        #####Model compile
         self.model.compile(optimizer='adam',#Adam/Xavier algorithms help in Optimization
               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
               metrics=['accuracy'])
 
-        ###################### Saving the model #####################
-        history = self.model.fit(self.train_data,validation_data=self.validation_data,epochs=5)
-        #tf.saved_model.save(model,"Access_manager/")
-
+        history = self.model.fit(self.train_data,validation_data=self.validation_data,epochs=20)
+    
 
         #test_loss, test_acc = model.evaluate(test_images,  test_labels, verbose=2)
 
@@ -151,6 +163,7 @@ class FaceRecognition :
 
     def processing_dataset(self):
 
+        #Prepocess data 
 
         BATCH_SIZE=32
         IMG_SIZE=(200,200)
@@ -159,14 +172,14 @@ class FaceRecognition :
 
         self.train_data = tf.keras.preprocessing.image_dataset_from_directory(train_path_img,
                                              shuffle=True,
-                                             validation_split=0.2,                                     
+                                             validation_split=0.1,                                     
                                              subset="training",
                                              seed=123,
                                              batch_size=BATCH_SIZE,
                                              image_size=IMG_SIZE)
 
         self.validation_data = tf.keras.preprocessing.image_dataset_from_directory(train_path_img,
-                                             validation_split=0.2,
+                                             validation_split=0.1,
                                              shuffle=True,
                                              subset="validation",
                                              seed=123,
@@ -174,7 +187,8 @@ class FaceRecognition :
                                              image_size=IMG_SIZE)
 
 
-        self.class_names=self.train_data.class_names
+        self.class_names=self.train_data.class_names #Storing the classes gather in the attributes of the classes to reuse
+        #DEBUG
         print(self.train_data)
         #print(train_data[2])
         print(self.validation_data)
@@ -195,21 +209,21 @@ class FaceRecognition :
         tf.keras.layers.experimental.preprocessing.Rescaling(1./255),
     
 
-        tf.keras.layers.Conv2D(32,(3,3),activation='relu'),#32: number of nodes, (3,3):filter dimension
+        #tf.keras.layers.Conv2D(32,(3,3),activation='relu'),#32: number of nodes, (3,3), filter dimension
         tf.keras.layers.Conv2D(32,(3,3),activation='relu'),
         tf.keras.layers.MaxPool2D(pool_size=2, strides=2),
 
-        #tf.keras.layers.Conv2D(62,(3,3),activation='relu'),#64: number of nodes, (3,3):filter dimension
+        #tf.keras.layers.Conv2D(62,(3,3),activation='relu'),#64: number of nodes, (3,3), filter dimension
         #tf.keras.layers.MaxPool2D(pool_size=2, strides=2),
 
-        #tf.keras.layers.Conv2D(32,(3,3),activation='relu'),
-        #tf.keras.layers.MaxPool2D(pool_size=2, strides=2),
-
-        tf.keras.layers.Conv2D(64,(3,3),activation='relu'),#64: number of nodes, (3,3):filter dimension
         tf.keras.layers.Conv2D(64,(3,3),activation='relu'),
         tf.keras.layers.MaxPool2D(pool_size=2, strides=2),
 
-        tf.keras.layers.Conv2D(128,(3,3),activation='relu'),#128: number of nodes, (3,3):filter dimension
+        #tf.keras.layers.Conv2D(64,(3,3),activation='relu'),#64: number of nodes, (3,3), filter dimension
+        tf.keras.layers.Conv2D(64,(3,3),activation='relu'),
+        tf.keras.layers.MaxPool2D(pool_size=2, strides=2),
+
+        tf.keras.layers.Conv2D(128,(3,3),activation='relu'),#128: number of nodes, (3,3), filter dimension
         tf.keras.layers.MaxPool2D(pool_size=2, strides=2),
     
         #tf.keras.layers.Conv2D(512,(3,3),activation='relu'),
@@ -231,39 +245,54 @@ class FaceRecognition :
     def CNNmodel_userpredict(self, imgname_test):
 
         img=self.test_path+imgname_test
+        cropped_face=np.float32([0])
 
         print("Test Image:",img)
 
         img_res = cv2.imread(img)
+
+        #### Perform face detection on the input image
+        gray= cv2.cvtColor(img_res, cv2.COLOR_BGR2GRAY)
+        faces = self.face_haarcascade.detectMultiScale(gray, 1.3, 5) #Face detection 
+
+        for (x,y,w,h) in faces:
+            cv2.rectangle(img_res,(x,y),(x+w,y+h),(255,0,0),2)
+            cropped_face= img_res[y:y+h,x:x+w]
         
-        img_test = cv2.imread(img,cv2.COLOR_BGR2GRAY)
-        img_test = cv2.resize(img_test,(200,200))
+        img_test = cv2.resize(cropped_face,(200,200))
+        
+        #img_test = cv2.imread(img,cv2.COLOR_BGR2GRAY)
+        #img_test = cv2.resize(img_test,(200,200))
 
-
-        ################# Testing and reshaping image to tensor ########################@
-        img_test=tf.convert_to_tensor(img_test)
-        img_test=tf.reshape(img_test, (1,200,200,3))
+        #### Testing and reshaping image to tensor 
+        img_test=tf.convert_to_tensor(img_test) #Converting img into tensor
+        img_test=tf.reshape(img_test, (1,200,200,3)) #Reshaping img to 200*200
         #test_img= np.expand_dims(img_test,0)
         print (img_test.shape)
         #test_img=tf.io.decode_image(test_path)
 
-
-
-        ################# Image prediction ########################@
+        ####Image prediction 
         result=self.model.predict(img_test,verbose=1)
         res_classes = self.model.predict_classes(img_test, verbose=1)
         res_name = self.class_names[np.argmax(result[0])]
         print("Result " ,res_classes," : ",res_name)#get the name o
         #res_name = self.class_names[res_classes]
-
         print('Prediction is: ',result)
-        
+
+
+        ####Text name position 
         font = cv2.FONT_HERSHEY_SIMPLEX
-        #cv2.imshow('img', img_res)
-        #cv2.putText(img_res, res_name, (123,127), font, 3, (0, 255, 0), 2, cv2.LINE_AA)
-        #k = cv2.waitKey(0)
-        #if k == 27:
-        #   cv2.destroyAllWindows()
+        textsize = cv2.getTextSize(res_name, font, 0.5, 1)[0]
+        
+        Xtext = int((img_res.shape[1] - textsize[0]) / 2) #Center text on X 
+        Ytext = int(img_res.shape[0] - 20)
+        
+        ####Showning the input immage with 
+        img_res = cv2.putText(img_res, res_name, (Xtext,Ytext), font, 0.6, (0, 255, 0), 1, cv2.LINE_AA)
+        cv2.imshow('img', img_res)
+        k = cv2.waitKey(0)
+        if k == 27:
+           cv2.destroyAllWindows()
         
 
     def CNNmodel_save(self):
