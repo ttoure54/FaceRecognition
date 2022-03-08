@@ -3,9 +3,9 @@ from tensorflow.keras.preprocessing import image
 from tensorflow.keras.optimizers import RMSprop
 
 
-import PIL
-import PIL.Image
-import matplotlib.pyplot as plt
+#import PIL
+#import PIL.Image
+#import matplotlib.pyplot as plt
 import tensorflow as tf
 import numpy as np
 import cv2
@@ -13,13 +13,12 @@ import os
 
 
 """
-2021 - ISTY - SEE5 - BORG Arthur & TOURE Talla 
+TOURE Talla 
 FaceRecognition library 
 Using examples available in the script main.py 
 
 Description : This library containts the Class "FaceRecognition" whiich includes methods to perform face detection and face recongnition using 
 Convolutionnal Neural Network. 
-
 """
 
 
@@ -154,8 +153,6 @@ class FaceRecognition :
               metrics=['accuracy'])
 
         history = self.model.fit(self.train_data,validation_data=self.validation_data,epochs=20)
-    
-
         #test_loss, test_acc = model.evaluate(test_images,  test_labels, verbose=2)
 
         self.model.summary()
@@ -201,14 +198,12 @@ class FaceRecognition :
 
         self.model = tf.keras.Sequential([
 
-        #Image suosampling 
+        #Image subsampling 
         #Conv + subsmapling 
 
-
-        #normalization of the matrix
+        #normalization of the matrix to get value between 0 and 1. 
         tf.keras.layers.experimental.preprocessing.Rescaling(1./255),
     
-
         #tf.keras.layers.Conv2D(32,(3,3),activation='relu'),#32: number of nodes, (3,3), filter dimension
         tf.keras.layers.Conv2D(32,(3,3),activation='relu'),
         tf.keras.layers.MaxPool2D(pool_size=2, strides=2),
